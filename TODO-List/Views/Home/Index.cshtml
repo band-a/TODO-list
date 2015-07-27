@@ -1,0 +1,162 @@
+﻿<div class="todo" id="tableBlock"></div>
+<div class="todo" id="editBlock">
+    <p><b>Редактирование</b></p>
+    <table>
+        <tr><td><label>ID: </label></td><td><input type="text" id="editId" /></td></tr>
+        <tr><td><label>Тема: </label></td><td><input type="text" id="editTheme" /></td></tr>
+        <tr><td><label>Описание: </label></td><td><input type="text" id="editDescription" /></td></tr>
+        <tr><td><label>Решена: </label></td><td><input type="text" id="editResolved" /></td></tr>
+        <tr><td><label>Дата: </label></td><td><input type="text" id="editDate" /></td></tr>
+    </table>
+    <button id="editTask">Сохранить</button>
+</div>
+<div class="todo" id="addBlock">
+    <p><b>Добавление</b></p>
+    <table>
+        <tr><td><label>ID: </label></td><td><input type="text" id="addId" /></td></tr>
+        <tr><td><label>Тема: </label></td><td><input type="text" id="addTheme" /></td></tr>
+        <tr><td><label>Описание: </label></td><td><input type="text" id="addDescription" /></td></tr>
+        <tr><td><label>Решена: </label></td><td><input type="text" id="addResolved" /></td></tr>
+        <tr><td><label>Дата: </label></td><td><input type="text" id="addDate" /></td></tr>
+    </table>
+    <button id="addTask">Добавить</button>
+</div>
+
+@section scripts
+{
+    <script type="text/javascript">
+        $(document).ready(function() {
+            GetAllTasks();
+            $("#editTask").click(function (event) {
+                event.preventDefault();
+                EditTask();
+            });
+            $("#addTask").click(function (event) {
+                event.preventDefault();
+                AddTask();
+            });
+            function GetAllTasks() {
+                $("#createBlock").css('display', 'block');
+                $("#editBlock").css('display', 'none');
+                $.ajax({
+                    url: '/api/task/',
+                    type: 'GET',
+                    dataType: 'json',
+                    success: function (data) {
+                        WriteResponse(data);
+                    },
+                    error: function (x, y, z) {
+                        alert("!!!"+x + '\n' + y + '\n' + z);
+                    }
+                })
+            }
+            //Добавление
+            function AddTask() {
+                var Task = {
+                    Id: $('#addId').val(),
+                    Theme: $('#addTheme').val(),
+                    Description: $('#addDescription').val(),
+                    Resolved: $('#addResolved').val(),
+                    Date: $('#addDate').val()
+                };
+                $.ajax({
+                    url: '/api/task/',
+                    type: 'POST',
+                    data: JSON.stringify(Task),
+                    contentType: "application/json;charset=utf-8",
+                    success: function (data) {
+                        GetAllTasks();
+                    },
+                    error: function (x, y, z) {
+                        alert(x + '\n' + y + '\n' + z);
+                    }
+                });
+            }
+            //Удаление
+            function DeleteTask(id) {
+                $.ajax({
+                    url: '/api/task/' + id,
+                    type: 'DELETE',
+                    contentType: "application/json;charset=utf-8",
+                    success: function (data) {
+                        GetAllTasks();
+                    },
+                    error: function (x, y, z) {
+                        alert(x + '\n' + y + '\n' + z);
+                    }
+                });
+            }
+            //Редактирование
+            function EditTask() {
+                var id = $('#editId').val();
+                var Task = {
+                    Id: $('#addId').val(),
+                    Theme: $('#addTheme').val(),
+                    Description: $('#addDescription').val(),
+                    Resolved: $('#addResolved').val(),
+                    Date: $('#addDate').val()
+                };
+                $.ajax({
+                    url: '/api/task/' + id,
+                    type: 'PUT',
+                    data: JSON.stringify(Task),
+                    contentType: "application/json;charset=utf-8",
+                    success: function (data) {
+                        GetAllTasks();
+                    },
+                    error: function (x, y, z) {
+                        alert(x + '\n' + y + '\n' + z);
+                    }
+
+                });
+            }
+            //Вывод на экран
+            function WriteResponse(Tasks) {
+                var strResult = "<table><th>ID</th><th>Тема</th><th>Описание</th><th>Решена</th><th>Дата</th>";
+                $.each(Tasks, function (index, Task) {
+                    strResult += "<tr><td>" + Task.id + "</td><td>" + Task.theme + "</td><td>" + Task.description + "</td><td>" + "<input type=checkbox>" + Task.resolved + "</td><td>" + Task.date + "</td><td> <a id='editItem' data-item='" + Task.id + "' onclick='EditItem(this);'>Редактировать</a></td" +
+                        "<td><a id='delItem' data-item='" + Task.Id + "' onclick='DeleteItem(this);' > Удалить</a></td></tr>";
+                });
+                strResult += "</table>";
+                $("#tableBlock").html(strResult);
+            }
+
+            //Обработчик удаления
+            function DeleteItem(el) {
+                var id = $(el).attr('data-item');
+                DeleteTask(id);
+            }
+            //Обработчик редактирования
+            function EditItem(el) {
+                var id = $(el).attr('data-item');
+                GetTask(id);
+            }
+            function ShowTask(Task) {
+                if (Task != null) {
+                    $("createBlock").css('display', 'none');
+                    $("editBlock").css('display', 'block');
+                    $("editId").val(Task.id);
+                    $("editTheme").val(Task.theme);
+                    $("editDescription").val(Task.description);
+                    $("editResolved").val(Task.resolved);
+                    $("editDate").val(Task.date);
+                } else {
+                    alert("Такой задачи не существует");
+                }
+            }
+            function GetTask(id) {
+                $.ajax({
+                    url: '/api/task/' + id,
+                    type: 'GET',
+                    dataType: 'json',
+                    success: function (data) {
+                        ShowTask(data);
+                    },
+                    error: function (x, y, z) {
+                        alert(x + '\n' + y + '\n' + z);
+                    }
+                })
+            }
+        })
+    </script>
+}
